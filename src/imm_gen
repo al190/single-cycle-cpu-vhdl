@@ -1,0 +1,48 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
+use work.isa_riscv.ALL;
+
+entity imm_gen is
+    port (
+        instr : in  std_logic_vector(31 downto 0);
+        imm   : out std_logic_vector(31 downto 0)
+    );
+end imm_gen;
+
+architecture Behavioral of imm_gen is
+begin
+    process(instr)
+        variable imm_val : signed(31 downto 0);
+    begin
+        imm_val := (others => '0');
+
+        case instr(6 downto 0) is
+            when op_IMM | op_LOAD | op_JALR =>
+                imm_val := resize(signed(instr(31 downto 20)), 32);
+
+            when op_STORE =>
+                imm_val := resize(signed(instr(31 downto 25) & instr(11 downto 7)), 32);
+
+            when op_BRANCH =>
+                imm_val := resize(
+                    signed(instr(31) & instr(7) & instr(30 downto 25) & instr(11 downto 8) & '0'),
+                    32
+                );
+
+            when op_LUI | op_AUIPC =>
+                imm_val := signed(instr(31 downto 12) & "000000000000");
+
+            when op_JAL =>
+                imm_val := resize(
+                    signed(instr(31) & instr(19 downto 12) & instr(20) & instr(30 downto 21) & '0'),
+                    32
+                );
+
+            when others =>
+                null;
+        end case;
+
+        imm <= std_logic_vector(imm_val);
+    end process;
+end Behavioral;

@@ -1,0 +1,107 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use work.isa_riscv.ALL;
+
+entity control_unit is
+    port (
+        opcode     : in  std_logic_vector(6 downto 0);
+        funct3     : in  std_logic_vector(2 downto 0);
+        funct7_bit : in  std_logic;
+        reg_write  : out std_logic;
+        mem_write  : out std_logic;
+        mem_read   : out std_logic;
+        alu_src    : out std_logic;
+        branch     : out std_logic;
+        jump       : out std_logic;
+        wb_sel     : out std_logic_vector(1 downto 0);
+        alu_op     : out std_logic_vector(3 downto 0)
+    );
+end control_unit;
+
+architecture Behavioral of control_unit is
+begin
+    process(opcode, funct3, funct7_bit)
+    begin
+        reg_write <= '0';
+        mem_write <= '0';
+        mem_read  <= '0';
+        alu_src   <= '0';
+        branch    <= '0';
+        jump      <= '0';
+        wb_sel    <= "00";
+        alu_op    <= opcode_ADD;
+
+        case opcode is
+            when op_OP =>
+                reg_write <= '1';
+                case funct3 is
+                    when "000" =>
+                        if funct7_bit = '1' then
+                            alu_op <= opcode_SUB;
+                        else
+                            alu_op <= opcode_ADD;
+                        end if;
+                    when "001" => alu_op <= opcode_SLL;
+                    when "010" => alu_op <= opcode_SLT;
+                    when "011" => alu_op <= opcode_SLTU;
+                    when "100" => alu_op <= opcode_XOR;
+                    when "101" =>
+                        if funct7_bit = '1' then
+                            alu_op <= opcode_SRA;
+                        else
+                            alu_op <= opcode_SRL;
+                        end if;
+                    when "110" => alu_op <= opcode_OR;
+                    when others => alu_op <= opcode_AND;
+                end case;
+
+            when op_IMM =>
+                reg_write <= '1';
+                alu_src   <= '1';
+                case funct3 is
+                    when "000" => alu_op <= opcode_ADD;
+                    when "001" => alu_op <= opcode_SLL;
+                    when "010" => alu_op <= opcode_SLT;
+                    when "011" => alu_op <= opcode_SLTU;
+                    when "100" => alu_op <= opcode_XOR;
+                    when "101" =>
+                        if funct7_bit = '1' then
+                            alu_op <= opcode_SRA;
+                        else
+                            alu_op <= opcode_SRL;
+                        end if;
+                    when "110" => alu_op <= opcode_OR;
+                    when others => alu_op <= opcode_AND;
+                end case;
+
+            when op_LOAD =>
+                reg_write <= '1';
+                mem_read  <= '1';
+                alu_src   <= '1';
+                wb_sel    <= "01";
+                alu_op    <= opcode_ADD;
+
+            when op_STORE =>
+                mem_write <= '1';
+                alu_src   <= '1';
+                alu_op    <= opcode_ADD;
+
+            when op_BRANCH =>
+                branch <= '1';
+                alu_op <= opcode_SUB;
+
+            when op_JAL =>
+                reg_write <= '1';
+                jump      <= '1';
+                wb_sel    <= "10";
+
+            when op_LUI =>
+                reg_write <= '1';
+                alu_src   <= '1';
+                wb_sel    <= "11";
+
+            when others =>
+                null;
+        end case;
+    end process;
+end Behavioral;

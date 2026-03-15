@@ -1,0 +1,50 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.numeric_std.ALL;
+use work.misc.ALL;
+
+entity register_file is
+generic(
+         Word_size : natural :=32 ;
+         size :      natural :=8
+            );
+    port (
+            clk   :in std_logic;
+            w_en  :in std_logic;
+            addr_a:in std_logic_vector(log2(size)-1 downto 0);
+            addr_b:in std_logic_vector(log2(size)-1 downto 0);
+            addr_c:in std_logic_vector(log2(size)-1 downto 0);
+            data_a: out  std_logic_vector(Word_size-1 downto 0);
+            data_b: out  std_logic_vector(Word_size-1 downto 0);
+            data_c: in  std_logic_vector(Word_size-1 downto 0)
+    );
+end register_file;
+
+
+architecture Behavioral of register_file is
+
+
+
+type mem_t is array (0 to size-1) of 
+                    std_logic_vector(word_size-1 downto 0);
+
+
+signal regs : mem_t := (others => (others => '0' ));
+
+begin
+    process(clk)
+    begin
+        if rising_edge(clk) then
+            regs(0) <= (others => '0');
+            if w_en = '1' and TO_INTEGER(unsigned(addr_c)) /= 0 then
+                regs(TO_INTEGER(unsigned(addr_c))) <= data_c;
+            end if;
+        end if;
+    end process;
+
+    data_a <= (others => '0') when TO_INTEGER(unsigned(addr_a)) = 0 else regs(TO_INTEGER(unsigned(addr_a)));
+    data_b <= (others => '0') when TO_INTEGER(unsigned(addr_b)) = 0 else regs(TO_INTEGER(unsigned(addr_b)));
+      
+
+
+end Behavioral;

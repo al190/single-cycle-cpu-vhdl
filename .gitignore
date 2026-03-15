@@ -1,0 +1,23 @@
+# Vivado generated directories
+.cache/
+.hw/
+.ip_user_files/
+.runs/
+.sim/
+.gen/
+.Xil/
+
+# Vivado logs and temp files
+*.jou
+*.log
+*.str
+
+# User-specific project files
+*.xpr.user
+*.ltx
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+*~
+*.swp

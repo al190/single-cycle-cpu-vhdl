@@ -1,0 +1,78 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
+use STD.ENV.ALL;
+
+entity cpu_tb is
+end cpu_tb;
+
+architecture behav of cpu_tb is
+    signal clk            : std_logic := '0';
+    signal rst            : std_logic := '1';
+    signal imem_load_en   : std_logic := '0';
+    signal imem_load_addr : std_logic_vector(6 downto 0) := (others => '0');
+    signal imem_load_data : std_logic_vector(31 downto 0) := (others => '0');
+    signal current_pc     : std_logic_vector(31 downto 0);
+    signal current_instr  : std_logic_vector(31 downto 0);
+    signal alu_debug      : std_logic_vector(31 downto 0);
+    signal wb_debug       : std_logic_vector(31 downto 0);
+begin
+    clk <= not clk after 5 ns;
+
+    dut : entity work.single_cycle_cpu
+        port map(
+            clk            => clk,
+            rst            => rst,
+            imem_load_en   => imem_load_en,
+            imem_load_addr => imem_load_addr,
+            imem_load_data => imem_load_data,
+            current_pc     => current_pc,
+            current_instr  => current_instr,
+            alu_debug      => alu_debug,
+            wb_debug       => wb_debug
+        );
+
+    stimulus : process
+        procedure load_instr(
+            constant addr : in natural;
+            constant data : in std_logic_vector(31 downto 0)
+        ) is
+        begin
+            imem_load_addr <= std_logic_vector(to_unsigned(addr, imem_load_addr'length));
+            imem_load_data <= data;
+            imem_load_en <= '1';
+            wait until rising_edge(clk);
+        end procedure;
+    begin
+        load_instr(0, x"00500093"); -- addi x1, x0, 5
+        load_instr(1, x"00700113"); -- addi x2, x0, 7
+        load_instr(2, x"002081B3"); -- add x3, x1, x2
+        load_instr(3, x"00302023"); -- sw x3, 0(x0)
+        load_instr(4, x"00002203"); -- lw x4, 0(x0)
+        load_instr(5, x"00320463"); -- beq x4, x3, +8
+        load_instr(6, x"00100293"); -- skipped by branch
+        load_instr(7, x"00900293"); -- addi x5, x0, 9
+        load_instr(8, x"0000006F"); -- jal x0, 0
+
+        imem_load_en <= '0';
+        imem_load_addr <= (others => '0');
+        imem_load_data <= (others => '0');
+
+        wait for 10 ns;
+        rst <= '0';
+        wait for 140 ns;
+
+        assert current_pc = x"00000020"
+            report "PC did not reach the expected jal loop address"
+            severity error;
+        assert current_instr = x"0000006F"
+            report "Final instruction is not jal x0, 0"
+            severity error;
+        assert wb_debug = x"00000024"
+            report "Write-back path did not produce the expected PC+4 value"
+            severity error;
+
+        report "cpu_tb passed" severity note;
+        finish;
+    end process;
+end behav;

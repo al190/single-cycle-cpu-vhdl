@@ -1,0 +1,46 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.numeric_std.all;
+
+entity memory_block is
+
+    generic(
+            mem_size : natural := 128;
+            addr_size : natural := 7;
+            word_size   : natural := 32
+            );
+            
+            port (
+            
+            clk         : in std_logic;
+            addrwrite   : in std_logic_vector(addr_size-1 downto 0) ;
+            datawrite   : in std_logic_vector(word_size-1 downto 0);
+            write_en    : in std_logic;
+            addread     : in std_logic_vector(addr_size-1 downto 0) ;
+            read_en     : in std_logic;
+            dataread    : out std_logic_vector(word_size-1 downto 0)
+            );
+ 
+end memory_block;
+
+architecture Behavioral of memory_block is
+
+type mem_t is array (0 to mem_size-1) of std_logic_vector(word_size-1 downto 0);
+signal mem: mem_t := (others => (others => '0'));
+
+
+
+begin
+
+process (clk)
+begin 
+        if rising_edge(clk) then
+            if write_en = '1' then
+               mem(TO_INTEGER(unsigned(addrwrite))) <= datawrite;
+               end if;
+            end if;
+          end process;
+          
+        dataread <= mem(TO_INTEGER(unsigned(addread))) when read_en = '1' else (others => '0');  
+          
+end Behavioral;

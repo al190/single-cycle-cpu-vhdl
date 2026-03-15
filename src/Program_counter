@@ -1,0 +1,41 @@
+library IEEE;
+use IEEE.std_logic_1164.ALL;
+use IEEE.numeric_std.ALL;
+
+entity program_counter is
+
+	generic(bits : integer := 8 );
+	port( clk : in std_logic;
+	      rst : in std_logic;
+	      load: in std_logic;
+	      pc_in: in signed(bits-1 downto 0 );
+	      pc_out: out signed(bits-1 downto 0) 
+	      );
+	-------------------------------
+
+end entity program_counter;
+
+architecture behav of program_counter is
+
+	-------------------------------
+
+	signal pc_val : signed(bits-1 downto 0);
+	
+begin  
+        process(clk)
+      begin 
+            if rst = '1' then 
+            pc_val <= (others => '0');
+            elsif rising_edge(clk) then 
+                if load ='1' then 
+                pc_val <= pc_in;
+                else 
+                pc_val <= pc_val + 4 ;
+                end if ; 
+                end if ; 
+                end process;
+                
+                pc_out  <= pc_val ; 
+                
+end behav;
+                
